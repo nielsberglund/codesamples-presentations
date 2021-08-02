@@ -1,0 +1,57 @@
+CREATE STREAM card_auth(cardId varchar, authDate varchar)
+WITH 
+(
+  KAFKA_TOPIC = 'cardauth',
+  VALUE_FORMAT = 'JSON'
+);
+
+select * 
+from CARD_AUTH 
+EMIT CHANGES;
+
+CREATE TABLE tb_card_count
+AS
+SELECT CARDID, 
+       COUNT(*) AS NMBERAUTHS
+FROM card_auth
+GROUP BY CARDID
+EMIT CHANGES;
+
+select * 
+from tb_card_count 
+EMIT CHANGES;
+
+CREATE TABLE tb_card_count
+AS
+SELECT CARDID, 
+       AS_VALUE(CARDID) AS CARDID2
+       COUNT(*) AS NMBERAUTHS
+FROM card_auth
+GROUP BY CARDID
+EMIT CHANGES;
+
+select * 
+from tb_card_count 
+EMIT CHANGES;
+
+
+CREATE TABLE tb_possible_fraud
+AS
+SELECT CARDID, 
+       COUNT(*) AS NMBERAUTHS
+FROM card_auth
+WINDOW TUMBLING (SIZE 60 SECONDS)
+GROUP BY CARDID
+HAVING COUNT(*) > 2
+EMIT CHANGES;
+
+select * 
+from tb_possible_fraud
+EMIT CHANGES;
+
+CREATE STREAM str_card_count
+AS
+SELECT CARDID, 
+       COUNT(*) AS NMBERAUTHS
+FROM card_auth
+PARTITION BY CARDID;  
